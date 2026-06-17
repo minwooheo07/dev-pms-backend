@@ -29,7 +29,7 @@ export class ProjectsController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Req() req: any, @Body() dto: UpdateProjectDto) {
-    return this.projectsService.update(id, req.user.id, dto);
+    return this.projectsService.update(id, req.user.id, req.user.role, dto);
   }
 
   @Delete(':id')
@@ -44,7 +44,7 @@ export class ProjectsController {
     @Body('userId') targetUserId: string,
     @Body('role') role: string,
   ) {
-    return this.projectsService.addMember(id, req.user.id, targetUserId, role);
+    return this.projectsService.addMember(id, req.user.id, targetUserId, role, req.user.role);
   }
 
   @Delete(':id/members/:memberId')
@@ -53,7 +53,7 @@ export class ProjectsController {
     @Param('memberId') memberId: string,
     @Req() req: any,
   ) {
-    return this.projectsService.removeMember(id, req.user.id, memberId);
+    return this.projectsService.removeMember(id, req.user.id, memberId, req.user.role);
   }
 
   @Get(':id/stats')

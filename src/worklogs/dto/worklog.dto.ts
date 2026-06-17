@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsUUID, IsNumber, IsDateString, Min } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsNumber, IsDateString, Min, IsEnum } from 'class-validator';
+
+export enum WorkLogStage {
+  RECEIVED = 'RECEIVED',
+  DEVELOPMENT = 'DEVELOPMENT',
+  COMPLETED = 'COMPLETED',
+  USER_CONFIRMED = 'USER_CONFIRMED',
+  DEPLOYED = 'DEPLOYED',
+}
 
 export class CreateWorkLogDto {
   @IsUUID()
@@ -6,7 +14,7 @@ export class CreateWorkLogDto {
 
   @IsOptional()
   @IsUUID()
-  userId?: string; // 미지정 시 본인
+  userId?: string;
 
   @IsOptional()
   @IsNumber()
@@ -20,6 +28,14 @@ export class CreateWorkLogDto {
   @IsOptional()
   @IsDateString()
   workDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }
 
 export class UpdateWorkLogDto {
@@ -35,4 +51,20 @@ export class UpdateWorkLogDto {
   @IsOptional()
   @IsDateString()
   workDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
+
+  @IsOptional()
+  @IsEnum(WorkLogStage)
+  stage?: WorkLogStage;
 }

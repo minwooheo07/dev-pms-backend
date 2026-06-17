@@ -193,9 +193,18 @@ export class TasksService {
     return task;
   }
 
-  async update(taskId: string, userId: string, dto: UpdateTaskDto) {
+  async update(taskId: string, userId: string, userRole: string, dto: UpdateTaskDto) {
     const existing = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!existing) throw new NotFoundException();
+
+    if (userRole !== 'ADMIN' && existing.createdById !== userId) {
+      const member = await this.prisma.projectMember.findUnique({
+        where: { userId_projectId: { userId, projectId: existing.projectId } },
+      });
+      if (!member || !['OWNER', 'ADMIN'].includes(member.role)) {
+        throw new ForbiddenException('태스크 수정은 작성자 또는 관리자만 가능합니다.');
+      }
+    }
 
     const { assigneeIds, labelIds, personnelIds, startDate, dueDate, ...data } = dto;
 
@@ -267,18 +276,17 @@ export class TasksService {
     return task;
   }
 
-  async remove(taskId: string, userId: string) {
+  async remove(taskId: string, userId: string, userRole: string) {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new NotFoundException();
 
-    // 삭제 권한: 태스크 작성자 또는 프로젝트 오너만
-    const isCreator = task.createdById === userId;
-    const member = await this.prisma.projectMember.findUnique({
-      where: { userId_projectId: { userId, projectId: task.projectId } },
-    });
-    const isOwner = member?.role === 'OWNER';
-    if (!isCreator && !isOwner) {
-      throw new ForbiddenException('태스크 삭제는 작성자 또는 프로젝트 오너만 가능합니다.');
+    if (userRole !== 'ADMIN' && task.createdById !== userId) {
+      const member = await this.prisma.projectMember.findUnique({
+        where: { userId_projectId: { userId, projectId: task.projectId } },
+      });
+      if (!member || !['OWNER', 'ADMIN'].includes(member.role)) {
+        throw new ForbiddenException('태스크 삭제는 작성자 또는 관리자만 가능합니다.');
+      }
     }
 
     await this.prisma.task.delete({ where: { id: taskId } });

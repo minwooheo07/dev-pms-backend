@@ -75,18 +75,16 @@ export class ProjectsService {
     return project;
   }
 
-  async findAll(userId: string) {
+  async findAll(_userId: string) {
+    // 소규모 팀: 모든 프로젝트를 전체 공개로 조회 (멤버십 무관)
     return this.prisma.project.findMany({
-      where: {
-        members: { some: { userId } },
-      },
       select: PROJECT_SELECT,
       orderBy: { updatedAt: 'desc' },
     });
   }
 
-  async findOne(projectId: string, userId: string) {
-    await this.checkMembership(projectId, userId);
+  async findOne(projectId: string, _userId: string) {
+    // 읽기는 전체 공개 (멤버십 무관)
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       select: {
@@ -98,9 +96,15 @@ export class ProjectsService {
     return project;
   }
 
-  async update(projectId: string, userId: string, dto: UpdateProjectDto) {
-    await this.checkAdminAccess(projectId, userId);
-
+  async update(projectId: string, userId: string, userRole: string, dto: UpdateProjectDto) {
+    if (userRole !== 'ADMIN') {
+      const member = await this.prisma.projectMember.findUnique({
+        where: { userId_projectId: { userId, projectId } },
+      });
+      if (!member || !['OWNER', 'ADMIN'].includes(member.role)) {
+        throw new ForbiddenException('프로젝트 수정은 관리자 또는 프로젝트 오너/관리자만 가능합니다.');
+      }
+    }
     const { startDate, endDate, ...rest } = dto;
     const project = await this.prisma.project.update({
       where: { id: projectId },
@@ -125,13 +129,17 @@ export class ProjectsService {
   }
 
   async remove(projectId: string, userId: string) {
-    await this.checkOwnerAccess(projectId, userId);
+    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) throw new NotFoundException('프로젝트를 찾을 수 없습니다.');
+    if (project.createdById !== userId) {
+      throw new ForbiddenException('프로젝트를 등록한 사용자만 삭제할 수 있습니다.');
+    }
     await this.prisma.project.delete({ where: { id: projectId } });
     return { message: '프로젝트가 삭제되었습니다.' };
   }
 
-  async addMember(projectId: string, userId: string, targetUserId: string, role = 'MEMBER') {
-    await this.checkAdminAccess(projectId, userId);
+  async addMember(projectId: string, userId: string, targetUserId: string, role = 'MEMBER', userRole?: string) {
+    await this.checkAdminAccess(projectId, userId, userRole);
     return this.prisma.projectMember.upsert({
       where: { userId_projectId: { userId: targetUserId, projectId } },
       update: { role: role as any },
@@ -144,17 +152,15 @@ export class ProjectsService {
     });
   }
 
-  async removeMember(projectId: string, userId: string, targetUserId: string) {
-    await this.checkAdminAccess(projectId, userId);
+  async removeMember(projectId: string, userId: string, targetUserId: string, userRole?: string) {
+    await this.checkAdminAccess(projectId, userId, userRole);
     await this.prisma.projectMember.delete({
       where: { userId_projectId: { userId: targetUserId, projectId } },
     });
     return { message: '멤버가 제거되었습니다.' };
   }
 
-  async getStats(projectId: string, userId: string) {
-    await this.checkMembership(projectId, userId);
-
+  async getStats(projectId: string, _userId: string) {
     const [total, byStatus, byPriority, overdue] = await Promise.all([
       this.prisma.task.count({ where: { projectId } }),
       this.prisma.task.groupBy({
@@ -187,7 +193,8 @@ export class ProjectsService {
     return member;
   }
 
-  private async checkAdminAccess(projectId: string, userId: string) {
+  private async checkAdminAccess(projectId: string, userId: string, userRole?: string) {
+    if (userRole === 'ADMIN') return; // 전역 관리자는 모든 프로젝트 접근 허용
     const member = await this.checkMembership(projectId, userId);
     if (!['OWNER', 'ADMIN'].includes(member.role)) {
       throw new ForbiddenException('관리자 권한이 필요합니다.');

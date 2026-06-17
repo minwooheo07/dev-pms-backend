@@ -1,0 +1,6 @@
+-- CreateEnum
+CREATE TYPE "WorkLogStage" AS ENUM ('RECEIVED', 'DEVELOPMENT', 'COMPLETED', 'USER_CONFIRMED', 'DEPLOYED');
+
+-- AlterTable
+ALTER TABLE "WorkLog" ADD COLUMN     "stage" "WorkLogStage" NOT NULL DEFAULT 'RECEIVED',
+ADD COLUMN     "userConfirmedAt" TIMESTAMP(3);

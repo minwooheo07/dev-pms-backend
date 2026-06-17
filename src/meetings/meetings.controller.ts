@@ -26,12 +26,12 @@ export class MeetingsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateMeetingDto) {
-    return this.meetingsService.update(id, dto);
+  update(@Param('id') id: string, @Req() req: any, @Body() dto: UpdateMeetingDto) {
+    return this.meetingsService.update(id, req.user.id, req.user.role, dto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: any) {
-    return this.meetingsService.remove(id, req.user.id);
+    return this.meetingsService.remove(id, req.user.id, req.user.role);
   }
 }

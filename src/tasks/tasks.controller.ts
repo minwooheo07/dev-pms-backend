@@ -50,7 +50,7 @@ export class TasksController {
     @Req() req: any,
     @Body() dto: UpdateTaskDto,
   ) {
-    return this.tasksService.update(taskId, req.user.id, dto);
+    return this.tasksService.update(taskId, req.user.id, req.user.role, dto);
   }
 
   @Patch(':taskId/move')
@@ -64,6 +64,6 @@ export class TasksController {
 
   @Delete(':taskId')
   remove(@Param('taskId') taskId: string, @Req() req: any) {
-    return this.tasksService.remove(taskId, req.user.id);
+    return this.tasksService.remove(taskId, req.user.id, req.user.role);
   }
 }

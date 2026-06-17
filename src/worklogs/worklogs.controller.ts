@@ -11,7 +11,7 @@ export class WorkLogsController {
   constructor(private workLogsService: WorkLogsService) {}
 
   @Get()
-  findAll(@Query() query: { userId?: string; projectId?: string }) {
+  findAll(@Query() query: { userId?: string; projectId?: string; stage?: string; startDate?: string; endDate?: string }) {
     return this.workLogsService.findAll(query);
   }
 
@@ -26,12 +26,17 @@ export class WorkLogsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateWorkLogDto) {
-    return this.workLogsService.update(id, dto);
+  update(@Param('id') id: string, @Req() req: any, @Body() dto: UpdateWorkLogDto) {
+    return this.workLogsService.update(id, dto, req.user.id, req.user.role);
+  }
+
+  @Patch(':id/acknowledge')
+  acknowledge(@Param('id') id: string, @Req() req: any) {
+    return this.workLogsService.acknowledge(id, req.user.id);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.workLogsService.remove(id);
+  remove(@Param('id') id: string, @Req() req: any) {
+    return this.workLogsService.remove(id, req.user.id, req.user.role);
   }
 }

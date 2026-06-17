@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID, IsDateString, MaxLength, ValidateIf } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsDateString, MaxLength, ValidateIf, IsArray } from 'class-validator';
 
 export class CreateMeetingDto {
   @IsString()
@@ -15,7 +15,24 @@ export class CreateMeetingDto {
 
   @IsOptional()
   @IsString()
+  startTime?: string;
+
+  @IsOptional()
+  @IsString()
+  endTime?: string;
+
+  @IsOptional()
+  @IsString()
   attendees?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  participantIds?: string[];
 
   @IsOptional()
   @ValidateIf((o) => o.projectId != null && o.projectId !== '')
@@ -39,7 +56,24 @@ export class UpdateMeetingDto {
 
   @IsOptional()
   @IsString()
+  startTime?: string;
+
+  @IsOptional()
+  @IsString()
+  endTime?: string;
+
+  @IsOptional()
+  @IsString()
   attendees?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  participantIds?: string[];
 
   @IsOptional()
   @ValidateIf((o) => o.projectId != null && o.projectId !== '')

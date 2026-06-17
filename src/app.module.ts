@@ -16,6 +16,9 @@ import { LabelsModule } from './labels/labels.module';
 import { PartnersModule } from './partners/partners.module';
 import { WorkLogsModule } from './worklogs/worklogs.module';
 import { MeetingsModule } from './meetings/meetings.module';
+import { IssuesModule } from './issues/issues.module';
+import { NoticesModule } from './notices/notices.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -38,6 +41,9 @@ import { MeetingsModule } from './meetings/meetings.module';
     PartnersModule,
     WorkLogsModule,
     MeetingsModule,
+    IssuesModule,
+    NoticesModule,
+    SearchModule,
   ],
 })
 export class AppModule {}

@@ -36,6 +36,8 @@ model User {
   createdIssues   Issue[]      @relation("IssueCreator")
   assignedIssues  Issue[]      @relation("IssueAssignee")
   createdNotices  Notice[]     @relation("NoticeCreator")
+  createdCanvases Canvas[]     @relation("CanvasCreator")
+  canvasComments  CanvasComment[] @relation("CanvasCommentAuthor")
   sentMessages     Message[]   @relation("MessageSender")
   receivedMessages Message[]   @relation("MessageRecipient")
 }
@@ -70,6 +72,7 @@ model Project {
   meetings     Meeting[]
   issues       Issue[]
   notices      Notice[]
+  canvases     Canvas[]
 }
 
 enum ProjectStatus {
@@ -451,6 +454,33 @@ model MeetingParticipant {
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([meetingId, userId])
+}
+
+// ─── Canvas ──────────────────────────────────────────────────────────────────
+
+model Canvas {
+  id        String   @id @default(uuid())
+  name      String   @default("새 캔버스")
+  data      Json     @default("{\"nodes\":[],\"edges\":[]}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User    @relation("CanvasCreator", fields: [createdById], references: [id])
+  comments    CanvasComment[]
+}
+
+model CanvasComment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  canvasId  String
+  canvas    Canvas   @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("CanvasCommentAuthor", fields: [userId], references: [id])
 }
 
 // ─── Message (사용자 간 쪽지) ──────────────────────────────────────────────────

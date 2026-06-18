@@ -257,7 +257,7 @@ export class TasksService {
   }
 
   async moveTask(taskId: string, userId: string, stepId: string | null, order: number) {
-    let statusUpdate: { status?: string } = {};
+    let statusUpdate: { status?: import('@prisma/client').TaskStatus } = {};
     if (stepId) {
       const step = await this.prisma.step.findUnique({ where: { id: stepId } });
       if (step?.isDone) statusUpdate.status = 'DONE';

@@ -13,7 +13,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    # DB 포트는 외부로 열지 않음 (백엔드 컨테이너만 내부 네트워크로 접근)
+    # 서버 내부(localhost)에만 5432 노출 → SSH 터널로 DBeaver 등 접속용.
+    # 127.0.0.1 바인딩이라 외부에서는 접근 불가 (ACG에서도 5432 차단 유지).
+    ports:
+      - '127.0.0.1:5432:5432'
 
   backend:
     build: .

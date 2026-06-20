@@ -23,6 +23,7 @@ import { MessagesModule } from './messages/messages.module';
 import { CanvasModule } from './canvas/canvas.module';
 import { SheetsModule } from './sheets/sheets.module';
 import { TemplatesModule } from './templates/templates.module';
+import { RoomsModule } from './rooms/rooms.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { TemplatesModule } from './templates/templates.module';
     CanvasModule,
     SheetsModule,
     TemplatesModule,
+    RoomsModule,
   ],
 })
 export class AppModule {}

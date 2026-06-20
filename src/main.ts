@@ -1,10 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const isProd = process.env.NODE_ENV === 'production';
+
+  // 보안 헤더. CSP는 API 서버 + (개발 환경) Swagger UI 호환을 위해 비활성화하고,
+  // 정적 첨부파일이 프론트(다른 오리진)에서 로드되도록 CORP는 cross-origin 허용.
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
 
   app.setGlobalPrefix('api');
 
@@ -38,21 +50,23 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Swagger (OpenAPI) 문서 — /api/docs
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('PMS API')
-    .setDescription('PMS 백엔드 API 문서')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document, {
-    swaggerOptions: { persistAuthorization: true },
-  });
+  // Swagger (OpenAPI) 문서 — /api/docs. 운영 환경에서는 비활성화.
+  if (!isProd) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('PMS API')
+      .setDescription('PMS 백엔드 API 문서')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: { persistAuthorization: true },
+    });
+  }
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 PMS Backend running on http://localhost:${port}/api`);
-  console.log(`📚 Swagger docs on http://localhost:${port}/api/docs`);
+  if (!isProd) console.log(`📚 Swagger docs on http://localhost:${port}/api/docs`);
 }
 bootstrap();

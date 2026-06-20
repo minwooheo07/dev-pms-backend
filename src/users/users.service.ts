@@ -63,6 +63,10 @@ export class UsersService {
 
     const hashed = await bcrypt.hash(dto.newPassword, 10);
     await this.prisma.user.update({ where: { id }, data: { password: hashed } });
+
+    // 비밀번호 변경 시 기존 refresh token 전부 폐기 → 탈취된 세션 강제 로그아웃
+    await this.prisma.refreshToken.deleteMany({ where: { userId: id } });
+
     return { message: '비밀번호가 변경되었습니다.' };
   }
 

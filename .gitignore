@@ -9,3 +9,6 @@ uploads/
 !.env.production.example
 
 /generated/prisma
+
+# OpenAPI 추출 산출물 (npm run export:openapi 로 생성, 개발자에게 직접 전달)
+openapi.json

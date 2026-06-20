@@ -26,6 +26,10 @@ export class CreateWorkLogDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  requester?: string;
+
+  @IsOptional()
   @IsDateString()
   workDate?: string;
 
@@ -47,6 +51,10 @@ export class UpdateWorkLogDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  requester?: string;
 
   @IsOptional()
   @IsDateString()

@@ -6,6 +6,7 @@ import { CreateWorkLogDto, UpdateWorkLogDto } from './dto/worklog.dto';
 const WORKLOG_SELECT = {
   id: true,
   description: true,
+  requester: true,
   hours: true,
   workDate: true,
   startDate: true,
@@ -108,6 +109,7 @@ export class WorkLogsService {
       userId: assignedUserId,
       hours: dto.hours ?? 0,
       description: dto.description,
+      requester: dto.requester || null,
       workDate: dto.startDate ? new Date(dto.startDate) : (dto.workDate ? new Date(dto.workDate) : new Date()),
       startDate: dto.startDate ? new Date(dto.startDate) : null,
       endDate: dto.endDate ? new Date(dto.endDate) : null,
@@ -157,6 +159,7 @@ export class WorkLogsService {
       data: {
         ...(dto.hours !== undefined && { hours: dto.hours }),
         ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.requester !== undefined && { requester: dto.requester || null }),
         ...(dto.startDate !== undefined && { startDate: dto.startDate ? new Date(dto.startDate) : null }),
         ...(dto.endDate !== undefined && { endDate: dto.endDate ? new Date(dto.endDate) : null }),
         ...(dto.workDate !== undefined && { workDate: dto.workDate ? new Date(dto.workDate) : undefined }),

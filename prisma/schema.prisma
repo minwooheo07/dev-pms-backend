@@ -360,6 +360,7 @@ enum WorkLogStage {
 model WorkLog {
   id          String        @id @default(uuid())
   description String?
+  requester   String?
   hours       Float         @default(0)
   workDate    DateTime      @default(now())
   startDate   DateTime?

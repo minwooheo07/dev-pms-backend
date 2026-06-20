@@ -41,6 +41,7 @@ model User {
   createdSheets   Sheet[]      @relation("SheetCreator")
   sentMessages     Message[]   @relation("MessageSender")
   receivedMessages Message[]   @relation("MessageRecipient")
+  createdTemplates Template[]   @relation("TemplateCreator")
 }
 
 enum Role {
@@ -517,4 +518,37 @@ model Message {
 
   @@index([senderId, recipientId])
   @@index([recipientId, isRead])
+}
+
+// ─── Template (프로젝트 단계별 템플릿 양식) ────────────────────────────────────
+
+model Template {
+  id          String   @id @default(uuid())
+  title       String
+  phase       String   // 프로젝트 단계 (예: 기획, 설계, 개발, 테스트, 배포 — 자유 입력)
+  description String?
+  content     String?  // 템플릿 본문 (텍스트/마크다운)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdById String
+  createdBy   User     @relation("TemplateCreator", fields: [createdById], references: [id])
+
+  files       TemplateFile[]
+
+  @@index([phase])
+}
+
+model TemplateFile {
+  id           String   @id @default(uuid())
+  filename     String   // 서버 저장 파일명
+  originalName String   // 원본 파일명
+  mimetype     String
+  size         Int
+  url          String
+  createdAt    DateTime @default(now())
+
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
 }

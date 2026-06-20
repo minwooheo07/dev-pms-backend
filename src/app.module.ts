@@ -22,6 +22,7 @@ import { SearchModule } from './search/search.module';
 import { MessagesModule } from './messages/messages.module';
 import { CanvasModule } from './canvas/canvas.module';
 import { SheetsModule } from './sheets/sheets.module';
+import { TemplatesModule } from './templates/templates.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { SheetsModule } from './sheets/sheets.module';
     MessagesModule,
     CanvasModule,
     SheetsModule,
+    TemplatesModule,
   ],
 })
 export class AppModule {}

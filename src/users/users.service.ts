@@ -12,6 +12,8 @@ const USER_SELECT = {
   position: true,
   department: true,
   phone: true,
+  statusEmoji: true,
+  statusText: true,
   createdAt: true,
   updatedAt: true,
 };
@@ -45,6 +47,8 @@ export class UsersService {
         ...(dto.position !== undefined && { position: dto.position }),
         ...(dto.department !== undefined && { department: dto.department }),
         ...(dto.phone !== undefined && { phone: dto.phone }),
+        ...(dto.statusEmoji !== undefined && { statusEmoji: dto.statusEmoji }),
+        ...(dto.statusText !== undefined && { statusText: dto.statusText }),
       },
       select: USER_SELECT,
     });

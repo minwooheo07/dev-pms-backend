@@ -25,6 +25,16 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(30)
   phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  statusEmoji?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  statusText?: string;
 }
 
 export class ChangePasswordDto {

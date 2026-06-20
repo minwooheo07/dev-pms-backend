@@ -18,6 +18,8 @@ model User {
   position   String?
   department String?
   phone      String?
+  statusEmoji String? @default("🟢")
+  statusText  String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

@@ -55,10 +55,12 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
+      // 허용 목록에 없으면 에러를 던지지 않고 CORS 헤더만 생략(false)한다.
+      // 에러를 던지면 동일 출처 요청까지 500이 나므로 금지. 차단은 브라우저가 수행.
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error(`Not allowed by CORS: ${origin}`));
+        callback(null, false);
       }
     },
     credentials: true,

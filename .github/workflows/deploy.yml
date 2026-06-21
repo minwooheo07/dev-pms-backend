@@ -25,7 +25,9 @@ jobs:
             echo "▶ Rebuilding & restarting containers..."
             # 이전 배포가 남긴 컨테이너(이름 충돌 방지)를 먼저 정리
             docker compose -f docker-compose.prod.yml down --remove-orphans || true
-            docker compose -f docker-compose.prod.yml up -d --build
+            # down으로 안 지워진 잔존 컨테이너 강제 제거 (데이터는 볼륨에 보존되어 안전)
+            docker ps -aq --filter "name=dev-pms-backend-" | xargs -r docker rm -f || true
+            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans --force-recreate
             echo "▶ Cleaning up old images..."
             docker image prune -f
             echo "✅ Deploy done."

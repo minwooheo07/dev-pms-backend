@@ -300,20 +300,42 @@ export class TasksService {
       if (step) statusUpdate.status = step.status;
     }
 
-    const task = await this.prisma.task.update({
+    const moving = await this.prisma.task.findUnique({
       where: { id: taskId },
-      data: { stepId, order, ...statusUpdate },
-      select: TASK_SELECT,
+      select: { projectId: true },
     });
+    if (!moving) throw new NotFoundException('태스크를 찾을 수 없습니다.');
+
+    // 대상 컬럼의 기존 태스크(이동 대상 제외)를 순서대로 가져와 지정 위치에 삽입 후 전체 재정렬
+    const siblings = await this.prisma.task.findMany({
+      where: { projectId: moving.projectId, stepId: stepId ?? null, parentId: null, id: { not: taskId } },
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+      select: { id: true },
+    });
+    const ids = siblings.map((s) => s.id);
+    const insertAt = Math.max(0, Math.min(order, ids.length));
+    ids.splice(insertAt, 0, taskId);
+
+    // order를 0,1,2…로 다시 매겨 순서값 충돌 제거 (이동 카드만 stepId/status도 갱신)
+    await this.prisma.$transaction(
+      ids.map((id, idx) =>
+        this.prisma.task.update({
+          where: { id },
+          data: id === taskId ? { stepId, order: idx, ...statusUpdate } : { order: idx },
+        }),
+      ),
+    );
+
+    const task = await this.prisma.task.findUnique({ where: { id: taskId }, select: TASK_SELECT });
 
     await this.activityLogs.log({
       userId,
       action: 'MOVED',
       entityType: 'TASK',
-      entityId: task.id,
-      entityName: task.title,
-      projectId: task.projectId,
-      taskId: task.id,
+      entityId: taskId,
+      entityName: task?.title ?? '',
+      projectId: moving.projectId,
+      taskId,
     });
 
     return task;

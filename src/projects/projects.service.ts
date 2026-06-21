@@ -164,21 +164,23 @@ export class ProjectsService {
   }
 
   async getStats(projectId: string, _userId: string) {
+    // 칸반 보드는 부모 태스크(parentId: null)만 표시하므로 통계도 동일 기준으로 집계
     const [total, byStatus, byPriority, overdue] = await Promise.all([
-      this.prisma.task.count({ where: { projectId } }),
+      this.prisma.task.count({ where: { projectId, parentId: null } }),
       this.prisma.task.groupBy({
         by: ['status'],
-        where: { projectId },
+        where: { projectId, parentId: null },
         _count: true,
       }),
       this.prisma.task.groupBy({
         by: ['priority'],
-        where: { projectId },
+        where: { projectId, parentId: null },
         _count: true,
       }),
       this.prisma.task.count({
         where: {
           projectId,
+          parentId: null,
           dueDate: { lt: new Date() },
           status: { notIn: ['DONE', 'CANCELLED'] },
         },

@@ -40,6 +40,10 @@ const TASK_SELECT = {
       },
     },
   },
+  issues: {
+    select: { id: true, title: true, riskLevel: true, status: true },
+    orderBy: { createdAt: 'asc' as const },
+  },
   _count: { select: { comments: true, attachments: true, subTasks: true, issues: true } },
 };
 

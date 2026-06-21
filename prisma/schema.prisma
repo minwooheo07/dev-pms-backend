@@ -224,6 +224,7 @@ enum TaskStatus {
   IN_PROGRESS
   IN_REVIEW
   DONE
+  ON_HOLD
   CANCELLED
 }
 

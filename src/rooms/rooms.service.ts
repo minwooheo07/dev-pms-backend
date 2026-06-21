@@ -82,6 +82,12 @@ export class RoomsService {
     return { ok: true };
   }
 
+  // 룸 이름 변경
+  async rename(roomId: string, userId: string, name: string) {
+    await this.assertMember(roomId, userId);
+    return this.prisma.room.update({ where: { id: roomId }, data: { name } });
+  }
+
   // 룸 나가기
   async leave(roomId: string, userId: string) {
     await this.prisma.roomMember.deleteMany({ where: { roomId, userId } });

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, Req, UseGuards, Sse, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Req, UseGuards, Sse, Query } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoomsService } from './rooms.service';
@@ -49,6 +49,12 @@ export class RoomsController {
   @Post(':roomId/members')
   addMember(@Param('roomId') roomId: string, @Req() req: any, @Body('userId') userId: string) {
     return this.roomsService.addMember(roomId, req.user.id, userId);
+  }
+
+  // 룸 이름 변경
+  @Patch(':roomId/name')
+  rename(@Param('roomId') roomId: string, @Req() req: any, @Body('name') name: string) {
+    return this.roomsService.rename(roomId, req.user.id, name);
   }
 
   // 룸 나가기

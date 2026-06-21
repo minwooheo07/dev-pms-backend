@@ -35,7 +35,7 @@ async function bootstrap() {
 
   // CORS: 콤마로 구분된 CORS_ORIGINS 환경변수로 허용 출처 지정.
   // 모바일 앱처럼 Origin 헤더가 없는 요청(!origin)도 허용한다.
-  const allowedOrigins = (
+  const rawOrigins = (
     process.env.CORS_ORIGINS ||
     process.env.FRONTEND_URL ||
     'http://localhost:5173'
@@ -44,9 +44,18 @@ async function bootstrap() {
     .map((o) => o.trim())
     .filter(Boolean);
 
+  // credentials: true 와 '*'(전체 허용)는 함께 쓰면 어떤 사이트든 인증 요청을 보낼 수 있어 위험.
+  // 설정에 '*'가 있어도 코드에서 무시하고 경고 → 정확한 도메인만 허용되도록 강제한다.
+  const allowedOrigins = rawOrigins.filter((o) => o !== '*');
+  if (rawOrigins.includes('*')) {
+    console.warn(
+      '⚠️  CORS_ORIGINS에 "*"가 포함되어 있습니다. credentials와 함께 쓰면 위험하므로 무시합니다. 정확한 도메인을 지정하세요.',
+    );
+  }
+
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error(`Not allowed by CORS: ${origin}`));

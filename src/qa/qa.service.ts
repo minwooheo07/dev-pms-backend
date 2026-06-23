@@ -23,9 +23,12 @@ export class QAService {
     return `${prefix}${seq}`;
   }
 
-  async findAll(srNumber?: string) {
+  async findAll(filter?: { srNumber?: string; workLogId?: string }) {
+    const where: any = {};
+    if (filter?.srNumber) where.srNumber = filter.srNumber;
+    if (filter?.workLogId) where.workLogId = filter.workLogId;
     return this.prisma.qATest.findMany({
-      where: srNumber ? { srNumber } : undefined,
+      where,
       include: { workLog: { select: { id: true, taskTitle: true, srNumber: true } } },
       orderBy: { createdAt: 'desc' },
     });

@@ -74,6 +74,12 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: stored.userId } });
     if (!user) throw new UnauthorizedException();
 
+    // 비활성화/승인대기 계정은 토큰 갱신 차단 (탈퇴 시 세션 즉시 만료)
+    if (user.status !== 'ACTIVE') {
+      await this.prisma.refreshToken.deleteMany({ where: { userId: user.id } });
+      throw new ForbiddenException('비활성화된 계정입니다.');
+    }
+
     await this.prisma.refreshToken.delete({ where: { token } });
     const tokens = await this.generateTokens(user.id, user.email);
     return tokens;

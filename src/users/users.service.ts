@@ -9,6 +9,7 @@ const USER_SELECT = {
   name: true,
   avatar: true,
   role: true,
+  status: true,
   position: true,
   department: true,
   phone: true,
@@ -103,6 +104,29 @@ export class UsersService {
   async rejectUser(id: string) {
     await this.prisma.user.delete({ where: { id } });
     return { ok: true };
+  }
+
+  // 관리자: 사용자 탈퇴(비활성화). 데이터는 보존하고 로그인만 차단한다.
+  async withdrawUser(adminId: string, id: string) {
+    if (adminId === id) {
+      throw new BadRequestException('자기 자신은 탈퇴시킬 수 없습니다.');
+    }
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+
+    // 비활성화 + 모든 리프레시 토큰 삭제(기존 세션 즉시 차단)
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id }, data: { status: 'INACTIVE' }, select: USER_SELECT }),
+      this.prisma.refreshToken.deleteMany({ where: { userId: id } }),
+    ]);
+    return updated;
+  }
+
+  // 관리자: 탈퇴 사용자 복구(재활성화)
+  async reactivateUser(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    return this.prisma.user.update({ where: { id }, data: { status: 'ACTIVE' }, select: USER_SELECT });
   }
 
   async markOnline(id: string) {

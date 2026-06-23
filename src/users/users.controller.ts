@@ -46,6 +46,20 @@ export class UsersController {
     return this.usersService.rejectUser(id);
   }
 
+  // 관리자: 사용자 탈퇴(비활성화)
+  @Patch(':id/withdraw')
+  withdraw(@Req() req: any, @Param('id') id: string) {
+    if (req.user.role !== 'ADMIN') throw new ForbiddenException('관리자만 접근 가능합니다.');
+    return this.usersService.withdrawUser(req.user.id, id);
+  }
+
+  // 관리자: 탈퇴 사용자 복구
+  @Patch(':id/reactivate')
+  reactivate(@Req() req: any, @Param('id') id: string) {
+    if (req.user.role !== 'ADMIN') throw new ForbiddenException('관리자만 접근 가능합니다.');
+    return this.usersService.reactivateUser(id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);

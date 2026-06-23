@@ -44,10 +44,6 @@ export class CreateWorkLogDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
-
-  @IsOptional()
-  @IsString()
-  srNumber?: string;
 }
 
 export class UpdateWorkLogDto {
@@ -87,8 +83,4 @@ export class UpdateWorkLogDto {
   @IsOptional()
   @IsEnum(WorkLogStage)
   stage?: WorkLogStage;
-
-  @IsOptional()
-  @IsString()
-  srNumber?: string;
 }

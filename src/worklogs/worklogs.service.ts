@@ -89,6 +89,20 @@ export class WorkLogsService {
     }));
   }
 
+  private async generateSrNumber(): Promise<string> {
+    const year = new Date().getFullYear().toString().slice(-2);
+    const prefix = `SR-${year}-`;
+    const last = await this.prisma.workLog.findFirst({
+      where: { srNumber: { startsWith: prefix } },
+      orderBy: { srNumber: 'desc' },
+      select: { srNumber: true },
+    });
+    const seq = last
+      ? String(parseInt(last.srNumber!.split('-')[2]) + 1).padStart(4, '0')
+      : '0001';
+    return `${prefix}${seq}`;
+  }
+
   async create(currentUserId: string, dto: CreateWorkLogDto) {
     let taskTitle: string | undefined;
     let projectName: string | undefined;
@@ -106,6 +120,7 @@ export class WorkLogsService {
 
     const assignedUserId = dto.userId || currentUserId;
     const isSelf = assignedUserId === currentUserId;
+    const srNumber = await this.generateSrNumber();
 
     const data: any = {
       userId: assignedUserId,
@@ -118,7 +133,7 @@ export class WorkLogsService {
       endDate: dto.endDate ? new Date(dto.endDate) : null,
       taskTitle: taskTitle ?? null,
       projectName: projectName ?? null,
-      srNumber: dto.srNumber || null,
+      srNumber,
       // 자기 자신에게 등록 시 자동 확인처리
       isAcknowledged: isSelf,
       acknowledgedAt: isSelf ? new Date() : null,
@@ -169,7 +184,6 @@ export class WorkLogsService {
         ...(dto.endDate !== undefined && { endDate: dto.endDate ? new Date(dto.endDate) : null }),
         ...(dto.workDate !== undefined && { workDate: dto.workDate ? new Date(dto.workDate) : undefined }),
         ...(dto.userId !== undefined && { userId: dto.userId }),
-        ...(dto.srNumber !== undefined && { srNumber: dto.srNumber || null }),
         ...stageData,
       },
       select: WORKLOG_SELECT,
@@ -185,6 +199,11 @@ export class WorkLogsService {
       },
       select: WORKLOG_SELECT,
     });
+  }
+
+  async resetAll() {
+    await this.prisma.workLog.deleteMany({});
+    return { message: '일감 전체 초기화 완료. SR 시퀀스도 리셋되었습니다.' };
   }
 
   async remove(id: string, userId?: string, userRole?: string) {

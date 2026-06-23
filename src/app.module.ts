@@ -23,6 +23,7 @@ import { CanvasModule } from './canvas/canvas.module';
 import { SheetsModule } from './sheets/sheets.module';
 import { TemplatesModule } from './templates/templates.module';
 import { RoomsModule } from './rooms/rooms.module';
+import { QAModule } from './qa/qa.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { RoomsModule } from './rooms/rooms.module';
     SheetsModule,
     TemplatesModule,
     RoomsModule,
+    QAModule,
   ],
 })
 export class AppModule {}

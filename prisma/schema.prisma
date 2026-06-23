@@ -391,11 +391,46 @@ model WorkLog {
 
   taskTitle   String?
   projectName String?
+  srNumber    String?
 
   userId String
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   taskId String?
   task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  qaTests QATest[]
+}
+
+// ─── QATest ──────────────────────────────────────────────────────────────────
+
+model QATest {
+  id        String       @id @default(uuid())
+  qaNumber  String       @unique
+  srNumber  String
+  title     String
+  content   String?
+  status    QATestStatus @default(PENDING)
+  result    QATestResult?
+  tester    String?
+  testDate  DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  workLogId String?
+  workLog   WorkLog? @relation(fields: [workLogId], references: [id], onDelete: SetNull)
+}
+
+enum QATestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum QATestResult {
+  PASS
+  FAIL
+  SKIP
 }
 
 // ─── Notice (공지사항) ────────────────────────────────────────────────────────

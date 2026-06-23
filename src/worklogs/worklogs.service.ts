@@ -19,6 +19,7 @@ const WORKLOG_SELECT = {
   createdAt: true,
   taskTitle: true,
   projectName: true,
+  srNumber: true,
   user: { select: { id: true, name: true, avatar: true } },
   task: {
     select: {
@@ -117,6 +118,7 @@ export class WorkLogsService {
       endDate: dto.endDate ? new Date(dto.endDate) : null,
       taskTitle: taskTitle ?? null,
       projectName: projectName ?? null,
+      srNumber: dto.srNumber || null,
       // 자기 자신에게 등록 시 자동 확인처리
       isAcknowledged: isSelf,
       acknowledgedAt: isSelf ? new Date() : null,
@@ -167,6 +169,7 @@ export class WorkLogsService {
         ...(dto.endDate !== undefined && { endDate: dto.endDate ? new Date(dto.endDate) : null }),
         ...(dto.workDate !== undefined && { workDate: dto.workDate ? new Date(dto.workDate) : undefined }),
         ...(dto.userId !== undefined && { userId: dto.userId }),
+        ...(dto.srNumber !== undefined && { srNumber: dto.srNumber || null }),
         ...stageData,
       },
       select: WORKLOG_SELECT,

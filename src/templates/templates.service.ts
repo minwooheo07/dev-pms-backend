@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTemplateDto, UpdateTemplateDto } from './dto/template.dto';
 import * as fs from 'fs';
@@ -56,8 +56,17 @@ export class TemplatesService {
     });
   }
 
-  async update(id: string, dto: UpdateTemplateDto) {
-    await this.findOne(id);
+  // 수정·삭제는 등록자 또는 관리자만 가능
+  private async assertOwnerOrAdmin(id: string, userId: string, userRole?: string) {
+    const template = await this.prisma.template.findUnique({ where: { id }, select: { createdById: true } });
+    if (!template) throw new NotFoundException('템플릿을 찾을 수 없습니다.');
+    if (userRole !== 'ADMIN' && template.createdById !== userId) {
+      throw new ForbiddenException('등록자 또는 관리자만 가능합니다.');
+    }
+  }
+
+  async update(id: string, dto: UpdateTemplateDto, userId: string, userRole?: string) {
+    await this.assertOwnerOrAdmin(id, userId, userRole);
     return this.prisma.template.update({
       where: { id },
       data: dto,
@@ -65,7 +74,8 @@ export class TemplatesService {
     });
   }
 
-  async remove(id: string) {
+  async remove(id: string, userId: string, userRole?: string) {
+    await this.assertOwnerOrAdmin(id, userId, userRole);
     const template = await this.prisma.template.findUnique({
       where: { id },
       include: { files: true },
@@ -82,8 +92,8 @@ export class TemplatesService {
     return { message: '템플릿이 삭제되었습니다.' };
   }
 
-  async addFile(templateId: string, file: Express.Multer.File) {
-    await this.findOne(templateId);
+  async addFile(templateId: string, file: Express.Multer.File, userId: string, userRole?: string) {
+    await this.assertOwnerOrAdmin(templateId, userId, userRole);
     return this.prisma.templateFile.create({
       data: {
         filename: file.filename,
@@ -111,9 +121,10 @@ export class TemplatesService {
     return { filePath, mimetype: f.mimetype, originalName: f.originalName };
   }
 
-  async removeFile(fileId: string) {
+  async removeFile(fileId: string, userId: string, userRole?: string) {
     const f = await this.prisma.templateFile.findUnique({ where: { id: fileId } });
     if (!f) throw new NotFoundException('파일을 찾을 수 없습니다.');
+    await this.assertOwnerOrAdmin(f.templateId, userId, userRole);
 
     const filePath = path.join(process.cwd(), 'uploads', f.filename);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);

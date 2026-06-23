@@ -33,13 +33,13 @@ export class TemplatesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateTemplateDto) {
-    return this.templatesService.update(id, dto);
+  update(@Req() req: any, @Param('id') id: string, @Body() dto: UpdateTemplateDto) {
+    return this.templatesService.update(id, dto, req.user.id, req.user.role);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.templatesService.remove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.templatesService.remove(id, req.user.id, req.user.role);
   }
 
   @Post(':id/files')
@@ -54,8 +54,8 @@ export class TemplatesController {
       limits: { fileSize: 20 * 1024 * 1024 },
     }),
   )
-  addFile(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
-    return this.templatesService.addFile(id, file);
+  addFile(@Req() req: any, @Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+    return this.templatesService.addFile(id, file, req.user.id, req.user.role);
   }
 
   @Get('files/:fileId/download')
@@ -65,7 +65,7 @@ export class TemplatesController {
   }
 
   @Delete('files/:fileId')
-  removeFile(@Param('fileId') fileId: string) {
-    return this.templatesService.removeFile(fileId);
+  removeFile(@Req() req: any, @Param('fileId') fileId: string) {
+    return this.templatesService.removeFile(fileId, req.user.id, req.user.role);
   }
 }

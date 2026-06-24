@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsDateString, IsInt, Min, Max, IsUUID, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsInt, Min, Max, IsUUID, IsArray, ValidateNested, IsEnum } from 'class-validator';
+import { WbsStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 
 class ReorderItem {
@@ -38,6 +39,9 @@ export class CreateWbsItemDto {
   @IsOptional() @IsInt() @Min(0) @Max(100)
   progress?: number;
 
+  @IsOptional() @IsEnum(WbsStatus)
+  status?: WbsStatus;
+
   @IsOptional() @IsString()
   note?: string;
 
@@ -66,6 +70,9 @@ export class UpdateWbsItemDto {
 
   @IsOptional() @IsInt() @Min(0) @Max(100)
   progress?: number;
+
+  @IsOptional() @IsEnum(WbsStatus)
+  status?: WbsStatus;
 
   @IsOptional() @IsString()
   note?: string;

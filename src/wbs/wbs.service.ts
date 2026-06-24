@@ -42,6 +42,7 @@ export class WbsService {
         ...(dto.startDate !== undefined && { startDate: dto.startDate ? new Date(dto.startDate) : null }),
         ...(dto.endDate !== undefined && { endDate: dto.endDate ? new Date(dto.endDate) : null }),
         ...(dto.progress !== undefined && { progress: dto.progress }),
+        ...(dto.status !== undefined && { status: dto.status }),
         ...(dto.note !== undefined && { note: dto.note || null }),
         ...(dto.order !== undefined && { order: dto.order }),
         ...(dto.depth !== undefined && { depth: dto.depth }),

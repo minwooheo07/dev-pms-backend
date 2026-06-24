@@ -658,6 +658,7 @@ model WbsItem {
   startDate  DateTime?
   endDate    DateTime?
   progress   Int       @default(0)
+  status     WbsStatus @default(NOT_STARTED)
   note       String?
   order      Int       @default(0)
   depth      Int       @default(0)
@@ -671,4 +672,11 @@ model WbsItem {
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+}
+
+enum WbsStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  DONE
+  ON_HOLD
 }

@@ -39,13 +39,13 @@ export class WbsService {
       data: {
         ...(dto.title !== undefined && { title: dto.title }),
         ...(dto.assignee !== undefined && { assignee: dto.assignee || null }),
-        ...('startDate' in dto && { startDate: dto.startDate ? new Date(dto.startDate) : null }),
-        ...('endDate' in dto && { endDate: dto.endDate ? new Date(dto.endDate) : null }),
+        ...(dto.startDate !== undefined && { startDate: dto.startDate ? new Date(dto.startDate) : null }),
+        ...(dto.endDate !== undefined && { endDate: dto.endDate ? new Date(dto.endDate) : null }),
         ...(dto.progress !== undefined && { progress: dto.progress }),
         ...(dto.note !== undefined && { note: dto.note || null }),
         ...(dto.order !== undefined && { order: dto.order }),
         ...(dto.depth !== undefined && { depth: dto.depth }),
-        ...('parentId' in dto && { parentId: dto.parentId ?? null }),
+        ...(dto.parentId !== undefined && { parentId: dto.parentId ?? null }),
       },
     });
   }

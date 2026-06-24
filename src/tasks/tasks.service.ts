@@ -83,7 +83,13 @@ export class TasksService {
       }),
       this.prisma.task.findMany({
         where: { projectId, parentId: null },
-        select: TASK_SELECT,
+        select: {
+          ...TASK_SELECT,
+          subTasks: {
+            select: TASK_SELECT,
+            orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+          },
+        },
         orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       }),
     ]);
@@ -221,6 +227,116 @@ export class TasksService {
     }
 
     return task;
+  }
+
+  // 엑셀 일괄 등록: 업무구분별로 상위 태스크를 만들고 각 행을 하위 태스크로 생성
+  async bulkCreate(
+    projectId: string,
+    userId: string,
+    rows: Array<{
+      category: string;
+      title: string;
+      description?: string;
+      assigneeName?: string;
+      priority?: string;
+      startDate?: string;
+      dueDate?: string;
+    }>,
+  ) {
+    // 유효한 행만 (업무구분 + 제목 필수)
+    const valid = rows.filter((r) => r.category?.trim() && r.title?.trim());
+    if (valid.length === 0) {
+      throw new NotFoundException('등록할 유효한 데이터가 없습니다. (업무구분/제목 필수)');
+    }
+
+    // 첫 번째 컬럼(Step) — 상위/하위 모두 여기로
+    const firstStep = await this.prisma.step.findFirst({
+      where: { projectId },
+      orderBy: { order: 'asc' },
+      select: { id: true, status: true },
+    });
+
+    // 프로젝트 멤버(담당자 이름 매칭용)
+    const members = await this.prisma.projectMember.findMany({
+      where: { projectId },
+      select: { user: { select: { id: true, name: true } } },
+    });
+    const nameToUserId = new Map(members.map((m) => [m.user.name.trim(), m.user.id]));
+
+    const PRIORITIES = ['URGENT', 'HIGH', 'MEDIUM', 'LOW'];
+    const normPriority = (p?: string) => {
+      const up = (p ?? '').trim().toUpperCase();
+      return PRIORITIES.includes(up) ? up : 'MEDIUM';
+    };
+    const parseDate = (d?: string) => {
+      if (!d?.trim()) return undefined;
+      const dt = new Date(d.trim());
+      return isNaN(dt.getTime()) ? undefined : dt;
+    };
+
+    // 업무구분(category)별 그룹핑 — 입력 순서 유지
+    const categories: string[] = [];
+    const grouped = new Map<string, typeof valid>();
+    for (const r of valid) {
+      const cat = r.category.trim();
+      if (!grouped.has(cat)) { grouped.set(cat, []); categories.push(cat); }
+      grouped.get(cat)!.push(r);
+    }
+
+    let parentCount = 0;
+    let childCount = 0;
+
+    // 기존 상위 태스크(같은 업무구분 제목)는 재사용
+    const existingParents = await this.prisma.task.findMany({
+      where: { projectId, parentId: null, title: { in: categories } },
+      select: { id: true, title: true },
+    });
+    const titleToParentId = new Map(existingParents.map((p) => [p.title, p.id]));
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const cat of categories) {  // 대량(162행+) 대비 타임아웃 여유 부여 (아래 옵션)
+        let parentId = titleToParentId.get(cat);
+        if (!parentId) {
+          const parent = await tx.task.create({
+            data: {
+              title: cat,
+              projectId,
+              createdById: userId,
+              stepId: firstStep?.id,
+              status: firstStep?.status ?? 'TODO',
+            },
+            select: { id: true },
+          });
+          parentId = parent.id;
+          parentCount++;
+        }
+
+        const children = grouped.get(cat)!;
+        for (let i = 0; i < children.length; i++) {
+          const r = children[i];
+          const assigneeId = r.assigneeName ? nameToUserId.get(r.assigneeName.trim()) : undefined;
+          await tx.task.create({
+            data: {
+              title: r.title.trim(),
+              description: r.description?.trim() || undefined,
+              priority: normPriority(r.priority) as any,
+              status: firstStep?.status ?? 'TODO',
+              stepId: firstStep?.id,
+              startDate: parseDate(r.startDate),
+              dueDate: parseDate(r.dueDate),
+              order: i,
+              parentId,
+              projectId,
+              createdById: userId,
+              assignees: assigneeId ? { create: { userId: assigneeId } } : undefined,
+            },
+          });
+          childCount++;
+        }
+      }
+    }, { timeout: 60000, maxWait: 10000 });
+
+    return { parentCount, childCount, total: childCount };
   }
 
   async update(taskId: string, userId: string, userRole: string, dto: UpdateTaskDto) {

@@ -176,6 +176,7 @@ export class WorkLogsService {
     return this.prisma.workLog.update({
       where: { id },
       data: {
+        ...(dto.taskId !== undefined && { taskId: dto.taskId }),
         ...(dto.hours !== undefined && { hours: dto.hours }),
         ...(dto.description !== undefined && { description: dto.description }),
         ...(dto.requester !== undefined && { requester: dto.requester || null }),

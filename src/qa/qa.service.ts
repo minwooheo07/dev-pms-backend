@@ -2,6 +2,13 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQATestDto, UpdateQATestDto } from './dto/qa.dto';
 
+const WORKLOG_SELECT = {
+  id: true, taskTitle: true, srNumber: true, projectName: true,
+  requester: true, requestDate: true, startDate: true, endDate: true,
+  stage: true, hours: true, description: true,
+  user: { select: { id: true, name: true } },
+} as const;
+
 @Injectable()
 export class QAService {
   constructor(private prisma: PrismaService) {}
@@ -29,7 +36,7 @@ export class QAService {
     if (filter?.workLogId) where.workLogId = filter.workLogId;
     return this.prisma.qATest.findMany({
       where,
-      include: { workLog: { select: { id: true, taskTitle: true, srNumber: true } } },
+      include: { workLog: { select: WORKLOG_SELECT } },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -37,7 +44,7 @@ export class QAService {
   async findOne(id: string) {
     return this.prisma.qATest.findUniqueOrThrow({
       where: { id },
-      include: { workLog: { select: { id: true, taskTitle: true, srNumber: true } } },
+      include: { workLog: { select: WORKLOG_SELECT } },
     });
   }
 

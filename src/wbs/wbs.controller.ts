@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WbsService } from './wbs.service';
 import { CreateWbsItemDto, UpdateWbsItemDto, ReorderWbsDto } from './wbs.dto';
 

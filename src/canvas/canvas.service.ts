@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
@@ -32,9 +32,28 @@ export class CanvasService {
     return canvas;
   }
 
-  async save(projectId: string, canvasId: string, userId: string, data: any) {
+  async save(projectId: string, canvasId: string, userId: string, data: any, baseUpdatedAt?: string) {
     const canvas = await this.prisma.canvas.findFirst({ where: { id: canvasId, projectId } });
     if (!canvas) throw new NotFoundException('캔버스를 찾을 수 없습니다.');
+
+    // 낙관적 락: 클라이언트가 마지막으로 본 버전(baseUpdatedAt)이 현재 DB 버전과 같을 때만 저장.
+    // updateMany + where(updatedAt) 로 비교·갱신을 원자적으로 처리해 동시 저장 경쟁을 막는다.
+    if (baseUpdatedAt) {
+      const res = await this.prisma.canvas.updateMany({
+        where: { id: canvasId, projectId, updatedAt: new Date(baseUpdatedAt) },
+        data: { data },
+      });
+      if (res.count === 0) {
+        // 버전 불일치 → 다른 사용자가 먼저 저장함. 최신 캔버스를 동봉해 409 반환.
+        const latest = await this.prisma.canvas.findFirst({ where: { id: canvasId, projectId } });
+        throw new ConflictException({ message: '다른 사용자가 먼저 수정했습니다.', latest });
+      }
+      const updated = await this.prisma.canvas.findFirst({ where: { id: canvasId, projectId } });
+      this.subject.next({ projectId, canvasId, actorId: userId, type: 'updated' });
+      return updated;
+    }
+
+    // baseUpdatedAt 미전송(최초 저장 등): 기존처럼 무조건 저장
     const updated = await this.prisma.canvas.update({ where: { id: canvasId }, data: { data } });
     this.subject.next({ projectId, canvasId, actorId: userId, type: 'updated' });
     return updated;

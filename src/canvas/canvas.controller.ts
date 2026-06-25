@@ -24,8 +24,8 @@ export class CanvasController {
   }
 
   @Put(':canvasId')
-  save(@Param('projectId') projectId: string, @Param('canvasId') canvasId: string, @Req() req: any, @Body('data') data: any) {
-    return this.svc.save(projectId, canvasId, req.user.id, data);
+  save(@Param('projectId') projectId: string, @Param('canvasId') canvasId: string, @Req() req: any, @Body('data') data: any, @Body('baseUpdatedAt') baseUpdatedAt?: string) {
+    return this.svc.save(projectId, canvasId, req.user.id, data, baseUpdatedAt);
   }
 
   @Put(':canvasId/rename')

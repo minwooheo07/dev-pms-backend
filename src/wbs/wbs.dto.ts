@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString, IsInt, Min, Max, IsUUID, IsArray, ValidateNested, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsInt, Min, Max, IsUUID, IsArray, ValidateNested, IsEnum, IsNumber } from 'class-validator';
 import { WbsStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 
@@ -53,6 +53,39 @@ export class CreateWbsItemDto {
 
   @IsOptional() @IsUUID()
   parentId?: string;
+}
+
+class BulkWbsItemDto {
+  @IsString()
+  title: string;
+
+  @IsOptional() @IsString()
+  assignee?: string;
+
+  @IsOptional() @IsString()
+  startDate?: string;
+
+  @IsOptional() @IsString()
+  endDate?: string;
+
+  @IsOptional() @IsInt() @Min(0) @Max(100)
+  progress?: number;
+
+  @IsOptional() @IsEnum(WbsStatus)
+  status?: WbsStatus;
+
+  @IsOptional() @IsString()
+  note?: string;
+
+  @IsOptional() @IsInt()
+  depth?: number;
+}
+
+export class BulkCreateWbsDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BulkWbsItemDto)
+  items: BulkWbsItemDto[];
 }
 
 export class UpdateWbsItemDto {

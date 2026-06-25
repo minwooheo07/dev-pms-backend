@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateWbsItemDto, UpdateWbsItemDto, ReorderWbsDto } from './wbs.dto';
+import { CreateWbsItemDto, UpdateWbsItemDto, ReorderWbsDto, BulkCreateWbsDto } from './wbs.dto';
 
 @Injectable()
 export class WbsService {
@@ -53,6 +53,41 @@ export class WbsService {
 
   async remove(id: string) {
     return this.prisma.wbsItem.delete({ where: { id } });
+  }
+
+  async bulkCreate(projectId: string, dto: BulkCreateWbsDto) {
+    const startOrder = await this.prisma.wbsItem.count({ where: { projectId } });
+    // depth별 마지막 생성 항목 추적 → parentId 자동 연결
+    const lastAtDepth = new Map<number, string>();
+
+    const created: any[] = [];
+    for (let i = 0; i < dto.items.length; i++) {
+      const item = dto.items[i];
+      const depth = item.depth ?? 0;
+      const parentId = depth > 0 ? (lastAtDepth.get(depth - 1) ?? null) : null;
+      const record = await this.prisma.wbsItem.create({
+        data: {
+          title: item.title,
+          assignee: item.assignee,
+          startDate: item.startDate ? new Date(item.startDate) : undefined,
+          endDate: item.endDate ? new Date(item.endDate) : undefined,
+          progress: item.progress ?? 0,
+          status: item.status,
+          note: item.note,
+          order: startOrder + i,
+          depth,
+          projectId,
+          parentId,
+        },
+      });
+      lastAtDepth.set(depth, record.id);
+      // 더 깊은 depth의 참조 초기화 (형제 노드가 나오면 이전 자식 참조 삭제)
+      for (const [d] of lastAtDepth) {
+        if (d > depth) lastAtDepth.delete(d);
+      }
+      created.push(record);
+    }
+    return { count: created.length };
   }
 
   async reorder(projectId: string, dto: ReorderWbsDto) {

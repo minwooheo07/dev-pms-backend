@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WbsService } from './wbs.service';
-import { CreateWbsItemDto, UpdateWbsItemDto, ReorderWbsDto } from './wbs.dto';
+import { CreateWbsItemDto, UpdateWbsItemDto, ReorderWbsDto, BulkCreateWbsDto } from './wbs.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('projects/:projectId/wbs')
@@ -16,6 +16,11 @@ export class WbsController {
   @Post()
   create(@Param('projectId') projectId: string, @Body() dto: CreateWbsItemDto) {
     return this.wbsService.create(projectId, dto);
+  }
+
+  @Post('bulk')
+  bulkCreate(@Param('projectId') projectId: string, @Body() dto: BulkCreateWbsDto) {
+    return this.wbsService.bulkCreate(projectId, dto);
   }
 
   @Patch('reorder')

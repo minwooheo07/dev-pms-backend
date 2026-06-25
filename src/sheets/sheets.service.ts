@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -34,9 +34,23 @@ export class SheetsService {
     return sheet;
   }
 
-  async save(projectId: string, sheetId: string, data: any) {
+  async save(projectId: string, sheetId: string, data: any, baseUpdatedAt?: string) {
     const sheet = await this.prisma.sheet.findFirst({ where: { id: sheetId, projectId } });
     if (!sheet) throw new NotFoundException('시트를 찾을 수 없습니다.');
+
+    // 낙관적 락: 클라이언트가 마지막으로 본 버전과 현재 DB 버전이 같을 때만 저장(원자적 비교·갱신)
+    if (baseUpdatedAt) {
+      const res = await this.prisma.sheet.updateMany({
+        where: { id: sheetId, projectId, updatedAt: new Date(baseUpdatedAt) },
+        data: { data },
+      });
+      if (res.count === 0) {
+        const latest = await this.prisma.sheet.findFirst({ where: { id: sheetId, projectId } });
+        throw new ConflictException({ message: '다른 사용자가 먼저 수정했습니다.', latest });
+      }
+      return this.prisma.sheet.findFirst({ where: { id: sheetId, projectId } });
+    }
+
     return this.prisma.sheet.update({ where: { id: sheetId }, data: { data } });
   }
 

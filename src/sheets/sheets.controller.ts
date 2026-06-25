@@ -23,8 +23,8 @@ export class SheetsController {
   }
 
   @Put(':sheetId')
-  save(@Param('projectId') projectId: string, @Param('sheetId') sheetId: string, @Body('data') data: any) {
-    return this.svc.save(projectId, sheetId, data);
+  save(@Param('projectId') projectId: string, @Param('sheetId') sheetId: string, @Body('data') data: any, @Body('baseUpdatedAt') baseUpdatedAt?: string) {
+    return this.svc.save(projectId, sheetId, data, baseUpdatedAt);
   }
 
   @Put(':sheetId/rename')

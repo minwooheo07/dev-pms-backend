@@ -250,7 +250,7 @@ export class TasksService {
     projectId: string,
     userId: string,
     rows: Array<{
-      category: string;
+      category?: string;
       title?: string;
       description?: string;
       assigneeName?: string;
@@ -260,10 +260,10 @@ export class TasksService {
       part?: string;
     }>,
   ) {
-    // 업무구분(category)만 필수, 요구사항(title)은 선택
-    const valid = rows.filter((r) => r.category?.trim());
+    // 제목(title) 또는 업무구분(category) 중 하나만 있으면 유효 — 업무구분은 선택
+    const valid = rows.filter((r) => r.title?.trim() || r.category?.trim());
     if (valid.length === 0) {
-      throw new NotFoundException('등록할 유효한 데이터가 없습니다. (업무구분 필수)');
+      throw new NotFoundException('등록할 유효한 데이터가 없습니다. (제목 필요)');
     }
 
     // 첫 번째 컬럼(Step) — 상위/하위 모두 여기로
@@ -291,17 +291,20 @@ export class TasksService {
       return isNaN(dt.getTime()) ? undefined : dt;
     };
 
-    // 업무구분(category)별 그룹핑 — 입력 순서 유지
+    // 업무구분(category)별 그룹핑 — 입력 순서 유지. 업무구분이 없는 행은 개별(단일) 태스크로 생성.
     const categories: string[] = [];
     const grouped = new Map<string, typeof valid>();
+    const standalone: typeof valid = [];
     for (const r of valid) {
-      const cat = r.category.trim();
+      const cat = r.category?.trim();
+      if (!cat) { if (r.title?.trim()) standalone.push(r); continue; }
       if (!grouped.has(cat)) { grouped.set(cat, []); categories.push(cat); }
       grouped.get(cat)!.push(r);
     }
 
     let parentCount = 0;
     let childCount = 0;
+    let standaloneCount = 0;
 
     // 기존 상위 태스크(같은 업무구분 제목)는 재사용
     const existingParents = await this.prisma.task.findMany({
@@ -356,9 +359,33 @@ export class TasksService {
           childCount++;
         }
       }
+
+      // 업무구분이 없는 행은 개별(단일) 태스크로 생성 (parentId = null)
+      for (let i = 0; i < standalone.length; i++) {
+        const r = standalone[i];
+        const assigneeId = r.assigneeName ? nameToUserId.get(r.assigneeName.trim()) : undefined;
+        await tx.task.create({
+          data: {
+            title: r.title!.trim(),
+            part: r.part?.trim() || undefined,
+            description: r.description?.trim() || undefined,
+            priority: normPriority(r.priority) as any,
+            status: firstStep?.status ?? 'TODO',
+            stepId: firstStep?.id,
+            startDate: parseDate(r.startDate),
+            dueDate: parseDate(r.dueDate),
+            order: i,
+            parentId: null,
+            projectId,
+            createdById: userId,
+            assignees: assigneeId ? { create: { userId: assigneeId } } : undefined,
+          },
+        });
+        standaloneCount++;
+      }
     }, { timeout: 60000, maxWait: 10000 });
 
-    return { parentCount, childCount, total: childCount };
+    return { parentCount, childCount, standaloneCount, total: childCount + standaloneCount };
   }
 
   async update(taskId: string, userId: string, userRole: string, dto: UpdateTaskDto) {

@@ -12,6 +12,10 @@ async function bootstrap() {
   // (rate limit이 nginx IP 하나로 뭉뚱그려지지 않도록)
   app.set('trust proxy', 1);
 
+  // 캔버스 이미지 base64 저장을 위해 body 크기 제한 확대 (기본 100kb → 20mb)
+  app.use(require('express').json({ limit: '20mb' }));
+  app.use(require('express').urlencoded({ extended: true, limit: '20mb' }));
+
   const isProd = process.env.NODE_ENV === 'production';
 
   // 보안 헤더. CSP는 API 서버 + (개발 환경) Swagger UI 호환을 위해 비활성화하고,

@@ -561,6 +561,13 @@ model Sheet {
   project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdById String
   createdBy   User    @relation("SheetCreator", fields: [createdById], references: [id])
+
+  // 2단계 구조: parentId=null 이면 문서(최상위), 값이 있으면 그 문서에 속한 페이지
+  parentId String?
+  parent   Sheet?  @relation("SheetPages", fields: [parentId], references: [id], onDelete: Cascade)
+  pages    Sheet[] @relation("SheetPages")
+
+  @@index([parentId])
 }
 
 // ─── Message (사용자 간 쪽지) ──────────────────────────────────────────────────

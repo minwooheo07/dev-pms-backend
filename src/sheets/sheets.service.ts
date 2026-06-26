@@ -5,9 +5,10 @@ import { PrismaService } from '../prisma/prisma.service';
 export class SheetsService {
   constructor(private prisma: PrismaService) {}
 
+  // 목록 페이지: 문서(최상위, parentId=null)만
   async list(projectId: string) {
     return this.prisma.sheet.findMany({
-      where: { projectId },
+      where: { projectId, parentId: null },
       select: {
         id: true, name: true, order: true, createdAt: true, updatedAt: true,
         createdBy: { select: { id: true, name: true, avatar: true } },
@@ -16,15 +17,36 @@ export class SheetsService {
     });
   }
 
-  async create(projectId: string, userId: string, name: string) {
+  // 에디터 하단 탭: 해당 문서(root)의 페이지들 = root + 자식들
+  async pages(projectId: string, sheetId: string) {
+    const sheet = await this.prisma.sheet.findFirst({
+      where: { id: sheetId, projectId },
+      select: { id: true, parentId: true },
+    });
+    if (!sheet) throw new NotFoundException('시트를 찾을 수 없습니다.');
+    const rootId = sheet.parentId ?? sheet.id;
+    const rows = await this.prisma.sheet.findMany({
+      where: { projectId, OR: [{ id: rootId }, { parentId: rootId }] },
+      select: {
+        id: true, name: true, order: true, parentId: true, createdAt: true, updatedAt: true,
+        createdBy: { select: { id: true, name: true, avatar: true } },
+      },
+    });
+    // root 먼저, 그다음 페이지들 order 순
+    rows.sort((a, b) => (a.id === rootId ? -1 : b.id === rootId ? 1 : a.order - b.order));
+    return rows;
+  }
+
+  async create(projectId: string, userId: string, name: string, parentId?: string | null) {
+    const pid = parentId ?? null;
     const last = await this.prisma.sheet.findFirst({
-      where: { projectId },
+      where: { projectId, parentId: pid },
       orderBy: { order: 'desc' },
       select: { order: true },
     });
     return this.prisma.sheet.create({
-      data: { projectId, createdById: userId, name, order: (last?.order ?? -1) + 1 },
-      select: { id: true, name: true, order: true, createdAt: true, updatedAt: true },
+      data: { projectId, createdById: userId, name, parentId: pid, order: (last?.order ?? -1) + 1 },
+      select: { id: true, name: true, order: true, parentId: true, createdAt: true, updatedAt: true },
     });
   }
 

@@ -25,7 +25,6 @@ import { TemplatesModule } from './templates/templates.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { QAModule } from './qa/qa.module';
 import { WbsModule } from './wbs/wbs.module';
-import { FormsModule } from './forms/forms.module';
 
 @Module({
   imports: [
@@ -58,7 +57,6 @@ import { FormsModule } from './forms/forms.module';
     RoomsModule,
     QAModule,
     WbsModule,
-    FormsModule,
   ],
 })
 export class AppModule {}

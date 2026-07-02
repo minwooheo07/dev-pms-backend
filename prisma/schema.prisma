@@ -43,8 +43,6 @@ model User {
   createdCanvases Canvas[]     @relation("CanvasCreator")
   canvasComments  CanvasComment[] @relation("CanvasCommentAuthor")
   createdSheets   Sheet[]      @relation("SheetCreator")
-  createdFormTemplates  FormTemplate[]   @relation("FormTemplateCreator")
-  formSubmissions       FormSubmission[] @relation("FormSubmissionSubmitter")
   sentMessages     Message[]   @relation("MessageSender")
   receivedMessages Message[]   @relation("MessageRecipient")
   createdTemplates Template[]   @relation("TemplateCreator")
@@ -93,7 +91,6 @@ model Project {
   canvases     Canvas[]
   sheets       Sheet[]
   wbsItems     WbsItem[]
-  formTemplates FormTemplate[]
 }
 
 enum ProjectStatus {
@@ -571,40 +568,6 @@ model Sheet {
   pages    Sheet[] @relation("SheetPages")
 
   @@index([parentId])
-}
-
-// ─── Form (커스텀 양식 편집기) ─────────────────────────────────────────────────
-// schema: 위젯 정의 배열(JSON) — [{ id, type, label, required, options, ... }]
-// 결재선(승인 워크플로우)은 이번 범위에서 제외. 제출 데이터는 FormSubmission에 독립 저장.
-
-model FormTemplate {
-  id          String   @id @default(uuid())
-  name        String   @default("새 양식")
-  description String?
-  schema      Json     @default("[]")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  projectId   String
-  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdById String
-  createdBy   User    @relation("FormTemplateCreator", fields: [createdById], references: [id])
-
-  submissions FormSubmission[]
-}
-
-model FormSubmission {
-  id        String   @id @default(uuid())
-  data      Json     @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  templateId    String
-  template      FormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  submittedById String
-  submittedBy   User         @relation("FormSubmissionSubmitter", fields: [submittedById], references: [id])
-
-  @@index([templateId])
 }
 
 // ─── Message (사용자 간 쪽지) ──────────────────────────────────────────────────
